@@ -4,3 +4,4 @@ venv
 .env
 main_json.py
 *.log
+input

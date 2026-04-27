@@ -19,7 +19,8 @@ logging.basicConfig(
 )
 def main():
     url_geral = 'https://api-zmartbi.teknisa.com'
-    excel_path = r'D:\Tree Solution\Teknisa\input.xlsx'
+    excel_path = r'D:\Tree Solution\Teknisa\[ETL] - Teknisa\input\input.xlsx'
+    # excel_path = r'C:\TreeSolution\Codes\[ETL] - Teknisa\input\input.xlsx'
     df = pd.read_excel(excel_path,sheet_name='input')
     
     for index,row in df.iterrows():

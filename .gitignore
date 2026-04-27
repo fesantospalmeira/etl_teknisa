@@ -1,0 +1,6 @@
+__pycache__
+json_anual
+venv
+.env
+main_json.py
+*.log

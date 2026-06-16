@@ -1,57 +1,43 @@
-import getDataApi
-from dotenv import load_dotenv
-from datetime import datetime,date
-from SendLogEmail import send_log_email as eml
-import pandas as pd
-import logging
 import os
-import time
+from dotenv import load_dotenv
+from loguru import logger
+from modules.PipelineUpdate import PipelineUpdate
+from etl_reporter_ai.logger_sender import LoggerSender
 
-load_dotenv()
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-log_path = os.path.join(BASE_DIR, "app.log")
-logging.basicConfig(
-    filename=log_path,
-    level=logging.INFO,
-    filemode="w",
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    encoding="utf-8"
-)
 def main():
-    url_geral = 'https://api-zmartbi.teknisa.com'
-    excel_path = r'D:\Tree Solution\Teknisa\[ETL] - Teknisa\input\input.xlsx'
-    # excel_path = r'C:\TreeSolution\Codes\[ETL] - Teknisa\input\input.xlsx'
-    df = pd.read_excel(excel_path,sheet_name='input')
     
-    for index,row in df.iterrows():
-        print(" ")
-        nome_endpoint = row['nome_tabela']
-        webtoken = row['api_key']
-        campo_data = row['campo_dt']
-
-        headers = {
-                'Content-Type': 'application/json',
-                'Webtoken': webtoken
-            }
-        getDataApi.get_data(url_geral,nome_endpoint,headers,campo_data)
-        time.sleep(3)
-
- 
-    EMAIL_USER = os.getenv("EMAIL_USER")
-    EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-    TO_EMAIL = os.getenv("TO_EMAIL")
-
-    if EMAIL_USER and EMAIL_PASSWORD and TO_EMAIL:
-        eml(
-            smtp_server="smtp.gmail.com",
-            smtp_port=465,
-            email_user=EMAIL_USER,
-            email_password=EMAIL_PASSWORD,
-            log_file=log_path
+    load_dotenv()
+    # ARQUIVO_EXCEL = r'C:\TreeSolution\Codes\[ETL] - Teknisa\input\input.xlsx' 
+    ARQUIVO_EXCEL = r'D:\Tree Solution\[ETL] - Teknisa\input\input.xlsx'  
+    NOME_PLANILHA = "input"
+    URL_BASE_API = "https://api-zmartbi.teknisa.com"       
+    emails_destino = os.getenv("TO_EMAIL", "")
+    lista_emails = [email.strip() for email in emails_destino.split(",") if email.strip()]
+    
+    meu_logger = LoggerSender(
+        pipeline_name='ETL Teknisa',
+        log_file="logs/etl_checklist.log",
+        to_list=lista_emails,  
+        subject="Relatório ETL Teknisa"
+    )
+    
+    meu_logger.setup_logger()
+    logger.info("🚀 Iniciando a rotina principal do orquestrador ETL...")
+    try:
+        pipeline = PipelineUpdate(
+            excel_path=ARQUIVO_EXCEL,
+            url_main=URL_BASE_API,
+            sheet_name=NOME_PLANILHA
         )
-    else:
-        logging.warning("⚠️ Variáveis de email não configuradas no .env, log não enviado.")
+        
+        pipeline.execute_pipeline()
+        
+    except Exception as e:
+        logger.critical(f"❌ Falha crítica estrutural no script main: {e}")
+        
+    finally:
+        logger.info("🏁 Encerrando rotina do script. Preparando envio de logs via e-mail...")
+        meu_logger.send_log_to_email()
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

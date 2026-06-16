@@ -5,3 +5,5 @@ venv
 main_json.py
 *.log
 input
+main_bkp.py
+/logs
